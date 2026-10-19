@@ -48,16 +48,29 @@ window.InkCoach = (function () {
     return minLevel <= levelIdx(level);
   }
 
+  const minLevel = (ex) => Math.min(...ex.levels.map(levelIdx));
+
   // Walk back through prerequisites until we find one that isn't started.
-  function unmetPrereq(ex, attempts, seen = new Set()) {
+  // A prerequisite aimed at a lower level than yours counts as met: if you
+  // say you're past that stage, the coach takes your word for it.
+  function unmetPrereq(ex, attempts, level, seen = new Set()) {
     for (const req of ex.requires || []) {
       if (seen.has(req)) continue;
       seen.add(req);
+      if (minLevel(byId[req]) < levelIdx(level)) continue;
       if (status(attempts, req) === "new") {
-        return unmetPrereq(byId[req], attempts, seen) || byId[req];
+        return unmetPrereq(byId[req], attempts, level, seen) || byId[req];
       }
     }
     return null;
+  }
+
+  // The next exercise to work on: the first one that isn't solid, skipping
+  // any you've already moved past (a later exercise in the list is solid).
+  function nextUp(list, attempts) {
+    return list.find(
+      (e, i) => status(attempts, e.id) !== "solid" && !list.slice(i + 1).some((later) => status(attempts, later.id) === "solid")
+    );
   }
 
   function generateSession(profile, attempts) {
@@ -96,9 +109,9 @@ window.InkCoach = (function () {
       main = byId[last.exerciseId];
       mainReason = `Last time this felt ${DIFFICULTY[last.difficulty].toLowerCase()} and you ticked ${Math.round(checkRatio(last) * 100)}% of the self-check. Repeating it is how it gets easy.`;
     } else {
-      const next = focusExercises.find((e) => status(attempts, e.id) !== "solid");
+      const next = nextUp(focusExercises, attempts);
       if (next) {
-        const pre = unmetPrereq(next, attempts);
+        const pre = unmetPrereq(next, attempts, level);
         if (pre) {
           main = pre;
           mainReason = `"${next.title}" builds on this one, so start here.`;
@@ -135,7 +148,7 @@ window.InkCoach = (function () {
           problemId: top.problem.id,
         });
       } else {
-        const stretch = focusExercises.find((e) => e.id !== main.id && status(attempts, e.id) !== "solid" && !unmetPrereq(e, attempts));
+        const stretch = focusExercises.find((e) => e.id !== main.id && status(attempts, e.id) !== "solid" && !unmetPrereq(e, attempts, level));
         if (stretch) {
           blocks.push({ exerciseId: stretch.id, minutes: remaining, role: "Stretch goal", reason: "If the main exercise went well, try a preview of what's next." });
         } else {
