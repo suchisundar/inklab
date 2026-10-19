@@ -7,7 +7,11 @@
 
 > Practice on synthetic skin or paper only. InkLab doesn't replace an apprenticeship, bloodborne-pathogen/hygiene training, or a working artist's eye.
 
-## Run it
+## Try it
+
+Published version: https://claude.ai/artifact/8QxgSrk1d86xUghk5zaAQr (private until you share it). There, the AI coach uses the viewer's Claude account with no API key, and each person's journal is saved privately to their own account.
+
+## Run it locally
 
 Static site with no build step and no install.
 

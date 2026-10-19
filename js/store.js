@@ -30,6 +30,61 @@ window.InkStore = (function () {
     } catch (e) {
       console.warn("InkLab: could not save", e);
     }
+    pushRemote();
+  }
+
+  // --- sync (only when published as a claude.ai Artifact) --------------------
+  // Each viewer's journal lives in their own private document, so it follows
+  // them across devices. Photos stay in this browser's IndexedDB.
+  let remote = null;
+  let pushing = Promise.resolve();
+  let dirty = false;
+  const forRemote = () => JSON.stringify({ ...state, settings: { ...state.settings, apiKey: "" } });
+
+  function pushRemote() {
+    if (!remote) return;
+    if (dirty) return; // a push is already queued; it will send the latest state
+    dirty = true;
+    pushing = pushing.then(async () => {
+      dirty = false;
+      try {
+        await remote.set({ json: forRemote(), updated: new Date().toISOString() });
+      } catch (e) {
+        console.warn("InkLab: sync failed", e);
+        if (onSyncError) onSyncError(e);
+      }
+    });
+  }
+
+  let onSyncError = null;
+  async function connect(onRemoteLoaded, onError) {
+    onSyncError = onError;
+    if (!window.claude || !window.claude.use) return false;
+    try {
+      const [db, user] = await Promise.all([window.claude.use("db"), window.claude.use("user")]);
+      const id = user && (await user.id());
+      if (!db || !id) return false;
+      const ref = db.doc("data/users/" + id + "/inklab");
+      const snap = await ref.get();
+      remote = ref;
+      if (snap.exists && snap.data().json) {
+        const key = state.settings.apiKey;
+        state = Object.assign(empty(), JSON.parse(snap.data().json));
+        state.settings.apiKey = key;
+        try {
+          localStorage.setItem(KEY, JSON.stringify(state));
+        } catch (e) {
+          /* ignore */
+        }
+        onRemoteLoaded();
+      } else if (state.attempts.length || state.questions.length) {
+        pushRemote();
+      }
+      return true;
+    } catch (e) {
+      console.warn("InkLab: sync unavailable", e);
+      return false;
+    }
   }
 
   function get() {
@@ -123,5 +178,5 @@ window.InkStore = (function () {
     });
   }
 
-  return { get, update, uid, reset, replace, putPhoto, getPhoto, deletePhoto, shrinkImage };
+  return { get, update, uid, reset, replace, connect, putPhoto, getPhoto, deletePhoto, shrinkImage };
 })();

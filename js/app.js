@@ -28,6 +28,30 @@
     modalBody.querySelectorAll("[data-close]").forEach((b) => b.addEventListener("click", () => modal.close()));
     if (onMount) onMount(modalBody);
   }
+  // In-page confirmation (the Artifact viewer doesn't show confirm()).
+  function ask(message, okLabel) {
+    return new Promise((resolve) => {
+      let answered = false;
+      const done = (v) => {
+        if (answered) return;
+        answered = true;
+        modal.removeEventListener("close", onClose);
+        modal.close();
+        resolve(v);
+      };
+      const onClose = () => done(false);
+      openModal(
+        `<p style="font-size:1.05rem">${esc(message)}</p>
+         <div class="row" style="margin-top:16px"><button class="primary" id="ask-ok">${esc(okLabel)}</button><button id="ask-cancel">Cancel</button></div>`,
+        (m) => {
+          m.querySelector("#ask-ok").addEventListener("click", () => done(true));
+          m.querySelector("#ask-cancel").addEventListener("click", () => done(false));
+        }
+      );
+      modal.addEventListener("close", onClose);
+    });
+  }
+
   modal.addEventListener("click", (e) => {
     if (e.target === modal) modal.close();
   });
@@ -42,7 +66,7 @@
   const routes = { practice: renderPractice, roadmap: renderRoadmap, journal: renderJournal, fix: renderFix, questions: renderQuestions, settings: renderSettings };
 
   function route() {
-    const name = (location.hash.replace(/^#\/?/, "").split("/")[0] || "practice");
+    const name = location.hash.replace(/^#\/?/, "").split(/[\/.]/)[0] || "practice";
     const fn = routes[name] || renderPractice;
     document.querySelectorAll(".tabs a").forEach((a) => a.classList.toggle("active", a.dataset.route === name));
     fn();
@@ -120,7 +144,7 @@
     el.querySelectorAll("[data-ex]").forEach((btn) => btn.addEventListener("click", () => openExercise(btn.dataset.ex)));
     el.querySelectorAll("[data-problem]").forEach((btn) =>
       btn.addEventListener("click", () => {
-        location.hash = "#/fix/" + btn.dataset.problem;
+        location.hash = "#fix." + btn.dataset.problem;
       })
     );
   }
@@ -129,7 +153,7 @@
     if (!b.exerciseId) {
       return `<section class="card block"><div class="mins"><b>${b.minutes}</b><span>min</span></div>
         <div><span class="pill grey">${esc(b.role)}</span><p style="margin-top:8px">${esc(b.reason)}</p>
-        <a class="btn" href="#/journal">Open journal</a></div></section>`;
+        <a class="btn" href="#journal">Open journal</a></div></section>`;
     }
     const ex = C.byId[b.exerciseId];
     const done = !!b.loggedAttemptId;
@@ -159,7 +183,7 @@
       ${
         ex.problems.length
           ? `<details><summary>Common problems</summary><ul>${ex.problems
-              .map((id) => `<li><a href="#/fix/${id}">${esc(C.problemById[id].symptom)}</a></li>`)
+              .map((id) => `<li><a href="#fix.${id}">${esc(C.problemById[id].symptom)}</a></li>`)
               .join("")}</ul></details>`
           : ""
       }`;
@@ -344,14 +368,14 @@
         ${
           pr.topProblems.length
             ? `<p class="muted small" style="margin-bottom:4px">Most common problems recently:</p>
-               <div class="row">${pr.topProblems.map((t) => `<a class="btn" href="#/fix/${t.problem.id}">${esc(t.problem.symptom)} · ${t.count}×</a>`).join("")}</div>`
+               <div class="row">${pr.topProblems.map((t) => `<a class="btn" href="#fix.${t.problem.id}">${esc(t.problem.symptom)} · ${t.count}×</a>`).join("")}</div>`
             : '<p class="muted small">No problems logged recently. Nice - or be a little more critical with yourself!</p>'
         }
       </section>`
           : ""
       }
       <div id="entries">
-        ${attempts.length ? attempts.map(entryCard).join("") : `<section class="card"><p>No entries yet.</p><a class="btn primary" href="#/practice">Start a practice session</a></section>`}
+        ${attempts.length ? attempts.map(entryCard).join("") : `<section class="card"><p>No entries yet.</p><a class="btn primary" href="#practice">Start a practice session</a></section>`}
       </div>`;
 
     attempts.forEach(async (a) => {
@@ -374,8 +398,8 @@
       })
     );
     view.querySelectorAll("[data-del]").forEach((b) =>
-      b.addEventListener("click", () => {
-        if (!confirm("Delete this entry?")) return;
+      b.addEventListener("click", async () => {
+        if (!(await ask("Delete this journal entry?", "Delete"))) return;
         S.update((s) => (s.attempts = s.attempts.filter((x) => x.id !== b.dataset.del)));
         S.deletePhoto(b.dataset.del);
         renderJournal();
@@ -401,7 +425,7 @@
           <div class="row" style="margin:8px 0">
             <span class="pill ${a.difficulty === 3 ? "warn" : a.difficulty === 1 ? "" : "grey"}">${C.DIFFICULTY[a.difficulty]}</span>
             <span class="pill grey">Self-check ${ratio}%</span>
-            ${(a.problems || []).map((p) => `<a class="pill warn" href="#/fix/${p}" style="text-decoration:none">${esc(C.problemById[p]?.symptom)}</a>`).join("")}
+            ${(a.problems || []).map((p) => `<a class="pill warn" href="#fix.${p}" style="text-decoration:none">${esc(C.problemById[p]?.symptom)}</a>`).join("")}
           </div>
           ${a.notes ? `<p>${esc(a.notes)}</p>` : ""}
           <details ${a.instructorNotes ? "open" : ""}><summary>Instructor feedback</summary>
@@ -429,7 +453,7 @@
               .join("")}</ol>`
           : ""
       }
-      ${drill ? `<h4>Suggested drill</h4><p><a href="#/roadmap">${esc(drill.title)}</a> - ${esc(ai.next_drill_reason)}</p>` : ""}
+      ${drill ? `<h4>Suggested drill</h4><p><a href="#roadmap">${esc(drill.title)}</a> - ${esc(ai.next_drill_reason)}</p>` : ""}
       ${ai.ask_instructor ? `<h4>Worth asking your instructor</h4><p>${esc(ai.ask_instructor)} <button class="link" data-ask="${esc(ai.ask_instructor)}">Add to my questions</button></p>` : ""}
       <p class="small muted" style="margin:8px 0 0">AI feedback from a photo is a best guess. Your instructor's eye wins.</p>
     </div>`;
@@ -438,9 +462,9 @@
   async function askCoach(attemptId, btn) {
     const st = S.get();
     const attempt = st.attempts.find((a) => a.id === attemptId);
-    if (!st.settings.apiKey) {
+    if (!st.settings.apiKey && !(await window.InkAI.builtIn())) {
       toast("Add your Claude API key in Settings to use the AI coach");
-      location.hash = "#/settings";
+      location.hash = "#settings";
       return;
     }
     btn.disabled = true;
@@ -457,11 +481,22 @@
     }
   }
 
-  function exportData() {
-    const blob = new Blob([JSON.stringify(S.get(), (k, v) => (k === "apiKey" ? undefined : v), 2)], { type: "application/json" });
+  async function exportData() {
+    const json = JSON.stringify(S.get(), (k, v) => (k === "apiKey" ? undefined : v), 2);
+    const filename = `inklab-journal-${new Date().toISOString().slice(0, 10)}.json`;
+    const downloads = window.claude && window.claude.use ? await window.claude.use("downloads") : null;
+    if (downloads) {
+      try {
+        const r = await downloads.save({ filename, data: json });
+        if (r && r.status === "saved") toast("Exported (photos stay on this device)");
+      } catch (err) {
+        toast("Export didn't finish. Try again.");
+      }
+      return;
+    }
     const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = `inklab-journal-${new Date().toISOString().slice(0, 10)}.json`;
+    a.href = URL.createObjectURL(new Blob([json], { type: "application/json" }));
+    a.download = filename;
     a.click();
     URL.revokeObjectURL(a.href);
     toast("Exported (photos stay on this device)");
@@ -470,25 +505,30 @@
   function importData(e) {
     const file = e.target.files[0];
     if (!file) return;
-    file.text().then((txt) => {
+    e.target.value = "";
+    file.text().then(async (txt) => {
+      let data;
       try {
-        const data = JSON.parse(txt);
+        data = JSON.parse(txt);
         if (!Array.isArray(data.attempts)) throw new Error();
-        if (!confirm("Replace your current journal with this file?")) return;
+      } catch (err) {
+        toast("That doesn't look like an InkLab export");
+        return;
+      }
+      if (!(await ask(`Replace your current journal with the ${data.attempts.length} entries in this file?`, "Replace"))) return;
+      {
         const key = S.get().settings.apiKey;
         S.replace(data);
         S.update((s) => (s.settings = { ...(s.settings || {}), apiKey: key }));
         toast("Imported");
         renderJournal();
-      } catch (err) {
-        toast("That doesn't look like an InkLab export");
       }
     });
   }
 
   // --- What went wrong? --------------------------------------------------------
   function renderFix() {
-    const target = location.hash.split("/")[2];
+    const target = location.hash.replace(/^#\/?/, "").split(/[\/.]/)[1];
     view.innerHTML = `
       <section class="card">
         <h1>What went wrong?</h1>
@@ -569,7 +609,11 @@
           await navigator.clipboard.writeText(msg);
           toast("Copied - paste it into a message");
         } catch (err) {
-          prompt("Copy this message:", msg);
+          openModal(
+            `<div class="modal-head"><h2>Copy this message</h2><button data-close aria-label="Close">✕</button></div>
+             <textarea id="copy-text" style="min-height:220px">${esc(msg)}</textarea>`,
+            (m) => m.querySelector("#copy-text").select()
+          );
         }
       });
     view.querySelectorAll("[data-answer]").forEach((t) =>
@@ -598,8 +642,23 @@
   }
 
   // --- Settings ------------------------------------------------------------------
-  function renderSettings() {
+  async function renderSettings() {
     const st = S.get();
+    if (await window.InkAI.builtIn()) {
+      view.innerHTML = `
+      <section class="card">
+        <h1>Settings</h1>
+        <h2 style="margin-top:16px">AI coach</h2>
+        <p class="muted">The AI coach uses your Claude account here, so there's no API key to set up. The first time you ask for feedback, you'll be asked to allow it.</p>
+      </section>
+      <section class="card">
+        <h2>Your data</h2>
+        <p class="muted">Your journal is saved privately to your account, and nobody else who opens this page can see it. Photos stay in this browser. Use Export on the Journal page to back up or share with your instructor.</p>
+        <button id="reset">Erase all InkLab data</button>
+      </section>`;
+      bindReset();
+      return;
+    }
     view.innerHTML = `
       <section class="card">
         <h1>Settings</h1>
@@ -626,14 +685,26 @@
         S.update((s) => (s.settings.apiKey = ""));
         renderSettings();
       });
-    view.querySelector("#reset").addEventListener("click", () => {
-      if (!confirm("Erase your journal, questions and settings? This can't be undone.")) return;
+    bindReset();
+  }
+
+  function bindReset() {
+    view.querySelector("#reset").addEventListener("click", async () => {
+      if (!(await ask("Erase your journal, questions and settings? This can't be undone.", "Erase everything"))) return;
       S.get().attempts.forEach((a) => S.deletePhoto(a.id));
       S.reset();
       toast("Erased");
-      location.hash = "#/practice";
+      location.hash = "#practice";
     });
   }
 
   route();
+  S.connect(
+    () => {
+      if (!modal.open) route();
+    },
+    (e) => {
+      if (e && e.code === "quota_exceeded") toast("Your journal is too big to sync. Export it and delete old entries.");
+    }
+  );
 })();

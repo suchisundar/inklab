@@ -55,10 +55,25 @@ Your job is to help them understand what they're likely doing wrong and what to 
     };
   }
 
+  // When InkLab runs as a claude.ai Artifact, the viewer's own Claude answers
+  // (no API key). Resolves the sample function, or null elsewhere.
+  let samplePromise = null;
+  function builtIn() {
+    if (!samplePromise) {
+      samplePromise = window.claude && window.claude.use ? window.claude.use("sample").catch(() => null) : Promise.resolve(null);
+    }
+    return samplePromise;
+  }
+
+  function dataUrlToBlob(dataUrl) {
+    const [head, b64] = dataUrl.split(",");
+    const bin = atob(b64);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return new Blob([bytes], { type: head.slice(5, head.indexOf(";")) });
+  }
+
   async function review({ apiKey, attempt, exercise, photoDataUrl, profile }) {
-    if (!apiKey) throw new Error("Add your Claude API key in Settings first.");
-    const Anthropic = await loadSdk();
-    const client = new Anthropic({ apiKey, dangerouslyAllowBrowser: true });
     const { EXERCISES, TROUBLESHOOT, LEVELS } = window.INKLAB_DATA;
 
     const checked = exercise.checks.map((c, i) => `${attempt.checks[i] ? "[x]" : "[ ]"} ${c}`).join("\n");
@@ -78,6 +93,13 @@ Their notes: ${attempt.notes || "(none)"}
 ${photoDataUrl ? "The photo of the practice is attached." : "No photo was provided - give feedback from the self-report only and say a photo would help."}
 
 Available drills (id: title): ${EXERCISES.map((e) => `${e.id}: ${e.title}`).join(" | ")}`;
+
+    const sample = await builtIn();
+    if (sample) return reviewWithSample(sample, text, photoDataUrl, EXERCISES.map((e) => e.id));
+
+    if (!apiKey) throw new Error("Add your Claude API key in Settings first.");
+    const Anthropic = await loadSdk();
+    const client = new Anthropic({ apiKey, dangerouslyAllowBrowser: true });
 
     const content = [];
     if (photoDataUrl) {
@@ -109,5 +131,39 @@ Available drills (id: title): ${EXERCISES.map((e) => `${e.id}: ${e.title}`).join
     }
   }
 
-  return { review, MODEL };
+  async function reviewWithSample(sample, text, photoDataUrl, drillIds) {
+    const opts = { modelTier: "default" };
+    let photoNote = "";
+    if (photoDataUrl) {
+      const caps = await sample.limits().catch(() => null);
+      if (caps && caps.images) opts.images = [dataUrlToBlob(photoDataUrl)];
+      else photoNote = "\n(The photo could not be sent in this view, so review from the self-report only and say so in photo_quality_note.)";
+    }
+    const prompt = `${SYSTEM}
+
+${text}${photoNote}
+
+Reply with only a JSON object in exactly this shape:
+${JSON.stringify(schema(drillIds).properties)}
+All keys are required. working_well and issues are arrays (issues: at most 3 objects with issue, likely_cause, fix). next_drill_id must be one of the drill ids listed above. Use "" for ask_instructor or photo_quality_note when there is nothing to say.`;
+    let out;
+    try {
+      out = await sample.json(prompt, opts);
+    } catch (e) {
+      if (e && e.code === "not_granted") throw new Error("The AI coach needs permission to use Claude. Allow it when asked, or from the artifact's Permissions menu.");
+      if (e && e.code === "rate_limited") throw new Error("The coach is busy. Wait a minute and try again.");
+      throw new Error((e && e.message) || "The coach couldn't answer. Try again.");
+    }
+    return {
+      summary: String(out.summary || ""),
+      working_well: Array.isArray(out.working_well) ? out.working_well.map(String) : [],
+      issues: Array.isArray(out.issues) ? out.issues.slice(0, 3) : [],
+      next_drill_id: drillIds.includes(out.next_drill_id) ? out.next_drill_id : "",
+      next_drill_reason: String(out.next_drill_reason || ""),
+      ask_instructor: String(out.ask_instructor || ""),
+      photo_quality_note: String(out.photo_quality_note || ""),
+    };
+  }
+
+  return { review, builtIn, MODEL };
 })();
