@@ -11,6 +11,21 @@
 
 Published version: https://claude.ai/artifact/8QxgSrk1d86xUghk5zaAQr (private until you share it). There, the AI coach uses the viewer's Claude account with no API key, and each person's journal is saved privately to their own account.
 
+## Deploy to Vercel (shareable class link)
+
+1. Go to [vercel.com/new](https://vercel.com/new), sign in with GitHub, and import `suchisundar/inklab`.
+2. Leave the defaults (Framework preset: **Other**, no build command, no output directory).
+3. Under **Environment Variables**, add:
+   - `ANTHROPIC_API_KEY` - your key from [console.anthropic.com](https://console.anthropic.com). It stays on the server and never reaches the browser.
+   - `CLASS_CODE` *(recommended)* - any word you choose. Classmates enter it in Settings to use the AI coach, so strangers who find the link can't spend your API credit. Everything else in the app works without it.
+4. Click **Deploy**. You'll get a link like `inklab.vercel.app` to post for class.
+
+Things to know:
+- On Vercel each person's journal and photos stay in their own browser. Nothing is shared between classmates, and nothing is stored on the server.
+- Each AI review is one Claude request with one photo, paid from your API account. Set a monthly spend limit in the Anthropic Console.
+- Without `ANTHROPIC_API_KEY` the site still works. The AI coach then asks each person for their own key.
+- If Vercel builds from a different branch than the one with this code, change it under Settings → Git → Production Branch.
+
 ## Run it locally
 
 Static site with no build step and no install.
@@ -58,7 +73,7 @@ To change the curriculum, edit `js/data.js`. It's plain data, so your instructor
 
 ## Privacy & the API key
 
-All data (journal, photos, questions, key) stays in your browser: localStorage, plus IndexedDB for photos. The AI coach calls the Claude API straight from the browser with your own key. That's fine for a personal prototype. A public app should route requests through a small server so the key isn't exposed.
+The journal, photos and questions are stored in each person's browser (localStorage, plus IndexedDB for photos). On Vercel the API key lives only in the server function. The browser-key mode is meant for personal use and should never be shared.
 
 ## Files
 
@@ -68,7 +83,9 @@ css/styles.css    styles (light + dark)
 js/data.js        curriculum, exercises, troubleshooting library
 js/store.js       localStorage + IndexedDB persistence
 js/coach.js       session generator, mastery + progress logic
-js/ai.js          optional Claude photo feedback
+js/coach-prompt.js  AI coach instructions + output shape (shared with the server)
+js/ai.js          AI coach: picks built-in Claude, the Vercel function, or your own key
+api/coach.js      Vercel function that calls Claude with the server-side key
 js/app.js         views and interactions
 ```
 

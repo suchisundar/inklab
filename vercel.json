@@ -1,0 +1,8 @@
+{
+  "functions": {
+    "api/coach.js": {
+      "includeFiles": "js/{data,coach-prompt}.js",
+      "maxDuration": 60
+    }
+  }
+}

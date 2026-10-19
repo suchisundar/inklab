@@ -9,7 +9,7 @@ window.InkStore = (function () {
     attempts: [],
     questions: [],
     session: null,
-    settings: { apiKey: "" },
+    settings: { apiKey: "", classCode: "" },
   });
 
   let state = load();
@@ -39,7 +39,7 @@ window.InkStore = (function () {
   let remote = null;
   let pushing = Promise.resolve();
   let dirty = false;
-  const forRemote = () => JSON.stringify({ ...state, settings: { ...state.settings, apiKey: "" } });
+  const forRemote = () => JSON.stringify({ ...state, settings: { ...state.settings, apiKey: "", classCode: "" } });
 
   function pushRemote() {
     if (!remote) return;
@@ -68,9 +68,9 @@ window.InkStore = (function () {
       const snap = await ref.get();
       remote = ref;
       if (snap.exists && snap.data().json) {
-        const key = state.settings.apiKey;
+        const local = state.settings;
         state = Object.assign(empty(), JSON.parse(snap.data().json));
-        state.settings.apiKey = key;
+        state.settings = { ...state.settings, apiKey: local.apiKey, classCode: local.classCode };
         try {
           localStorage.setItem(KEY, JSON.stringify(state));
         } catch (e) {

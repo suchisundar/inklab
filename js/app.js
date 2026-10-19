@@ -462,7 +462,13 @@
   async function askCoach(attemptId, btn) {
     const st = S.get();
     const attempt = st.attempts.find((a) => a.id === attemptId);
-    if (!st.settings.apiKey && !(await window.InkAI.builtIn())) {
+    const srv = await window.InkAI.server();
+    if (srv && srv.ok && srv.needsCode && !st.settings.classCode) {
+      toast("Enter the class code in Settings to use the AI coach");
+      location.hash = "#settings";
+      return;
+    }
+    if (!(await window.InkAI.mode(st.settings.apiKey))) {
       toast("Add your Claude API key in Settings to use the AI coach");
       location.hash = "#settings";
       return;
@@ -471,7 +477,7 @@
     btn.textContent = "Coach is looking…";
     try {
       const photo = attempt.hasPhoto ? await S.getPhoto(attempt.id) : null;
-      const ai = await window.InkAI.review({ apiKey: st.settings.apiKey, attempt, exercise: C.byId[attempt.exerciseId], photoDataUrl: photo, profile: st.profile });
+      const ai = await window.InkAI.review({ apiKey: st.settings.apiKey, classCode: st.settings.classCode, attempt, exercise: C.byId[attempt.exerciseId], photoDataUrl: photo, profile: st.profile });
       S.update((s) => (s.attempts.find((a) => a.id === attemptId).ai = ai));
       renderJournal();
     } catch (err) {
@@ -482,7 +488,7 @@
   }
 
   async function exportData() {
-    const json = JSON.stringify(S.get(), (k, v) => (k === "apiKey" ? undefined : v), 2);
+    const json = JSON.stringify(S.get(), (k, v) => (k === "apiKey" || k === "classCode" ? undefined : v), 2);
     const filename = `inklab-journal-${new Date().toISOString().slice(0, 10)}.json`;
     const downloads = window.claude && window.claude.use ? await window.claude.use("downloads") : null;
     if (downloads) {
@@ -517,9 +523,9 @@
       }
       if (!(await ask(`Replace your current journal with the ${data.attempts.length} entries in this file?`, "Replace"))) return;
       {
-        const key = S.get().settings.apiKey;
+        const { apiKey: key, classCode } = S.get().settings;
         S.replace(data);
-        S.update((s) => (s.settings = { ...(s.settings || {}), apiKey: key }));
+        S.update((s) => (s.settings = { ...(s.settings || {}), apiKey: key, classCode }));
         toast("Imported");
         renderJournal();
       }
@@ -656,6 +662,35 @@
         <p class="muted">Your journal is saved privately to your account, and nobody else who opens this page can see it. Photos stay in this browser. Use Export on the Journal page to back up or share with your instructor.</p>
         <button id="reset">Erase all InkLab data</button>
       </section>`;
+      bindReset();
+      return;
+    }
+    const srv = await window.InkAI.server();
+    if (srv && srv.ok) {
+      view.innerHTML = `
+      <section class="card">
+        <h1>Settings</h1>
+        <h2 style="margin-top:16px">AI coach</h2>
+        ${
+          srv.needsCode
+            ? `<p class="muted">Enter the class code you were given to turn on AI feedback for your practice photos.</p>
+               <label class="field" for="code">Class code</label>
+               <input type="text" id="code" value="${esc(st.settings.classCode || "")}" autocomplete="off" />
+               <div class="row" style="margin-top:10px"><button class="primary" id="save-code">Save code</button></div>`
+            : `<p class="muted">The AI coach is ready. Open a journal entry and choose "Get AI coach feedback".</p>`
+        }
+      </section>
+      <section class="card">
+        <h2>Your data</h2>
+        <p class="muted">Your journal and photos are stored only in this browser on this device. Nobody else can see them, and clearing your browser data erases them. Use Export on the Journal page to back up or share with your instructor. When you ask for AI feedback, that entry and its photo are sent to Claude to be reviewed.</p>
+        <button id="reset">Erase all InkLab data</button>
+      </section>`;
+      const sc = view.querySelector("#save-code");
+      if (sc)
+        sc.addEventListener("click", () => {
+          S.update((s) => (s.settings.classCode = view.querySelector("#code").value.trim()));
+          toast("Saved");
+        });
       bindReset();
       return;
     }

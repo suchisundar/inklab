@@ -1,0 +1,9 @@
+{
+  "name": "inklab",
+  "private": true,
+  "type": "module",
+  "description": "Your personal tattoo practice coach",
+  "dependencies": {
+    "@anthropic-ai/sdk": "0.131.0"
+  }
+}
