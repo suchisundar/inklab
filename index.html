@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>InkLab</title>
+  <meta name="description" content="Your personal tattoo practice coach: a guided roadmap, adaptive practice sessions, a practice journal and a 'what went wrong?' troubleshooter." />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect x=%2211%22 y=%223%22 width=%2210%22 height=%2216%22 rx=%224%22/%3E%3Cpath d=%22M16 19v10%22 stroke=%22black%22 stroke-width=%222%22/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#/practice" aria-label="InkLab home">
+      <svg class="logo" viewBox="0 0 32 32" aria-hidden="true">
+        <rect x="11" y="3" width="10" height="16" rx="4" fill="currentColor" />
+        <rect x="13" y="19" width="6" height="5" rx="1.5" fill="currentColor" opacity=".7" />
+        <path d="M16 24v5" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+        <circle cx="16" cy="30" r="1.2" fill="var(--accent)" />
+      </svg>
+      <span>
+        <strong>InkLab</strong>
+        <small>Your personal tattoo practice coach</small>
+      </span>
+    </a>
+    <nav class="tabs" aria-label="Sections">
+      <a href="#/practice" data-route="practice">Practice</a>
+      <a href="#/roadmap" data-route="roadmap">Roadmap</a>
+      <a href="#/journal" data-route="journal">Journal</a>
+      <a href="#/fix" data-route="fix">What went wrong?</a>
+      <a href="#/questions" data-route="questions">Instructor Qs</a>
+      <a href="#/settings" data-route="settings" aria-label="Settings">⚙</a>
+    </nav>
+  </header>
+
+  <main id="view" class="container" tabindex="-1"></main>
+
+  <dialog id="modal">
+    <div id="modal-body"></div>
+  </dialog>
+
+  <div id="toast" role="status" aria-live="polite"></div>
+
+  <footer class="container footer">
+    Practice on synthetic skin or paper only. InkLab doesn't replace an apprenticeship, hygiene/bloodborne-pathogen training, or your instructor's eye.
+    Your data stays in this browser.
+  </footer>
+
+  <script src="js/data.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/coach.js"></script>
+  <script src="js/ai.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
