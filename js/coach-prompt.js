@@ -51,22 +51,29 @@ Your job is to help them understand what they're likely doing wrong and what to 
     };
   }
 
-  // input: { exerciseId, level, difficulty, checks: bool[], problems: id[], notes, hasPhoto }
+  // input: { exerciseId, title, level, difficulty, checks: bool[], problems: id[], notes, hasPhoto }
+  // exerciseId is null for free practice (not a roadmap exercise); title says what it was.
   function buildText(input) {
     const { EXERCISES, TROUBLESHOOT, LEVELS } = window.INKLAB_DATA;
     const exercise = EXERCISES.find((e) => e.id === input.exerciseId);
-    const checked = exercise.checks.map((c, i) => `${input.checks[i] ? "[x]" : "[ ]"} ${c}`).join("\n");
     const problems = (input.problems || [])
       .map((id) => (TROUBLESHOOT.find((p) => p.id === id) || {}).symptom)
       .filter(Boolean);
     const level = (LEVELS.find((l) => l.id === input.level) || {}).label || "Unknown";
 
-    return `Exercise: ${exercise.title}
-Goal of the exercise: ${exercise.why}
+    const about = exercise
+      ? `Exercise: ${exercise.title}
+Goal of the exercise: ${exercise.why}`
+      : `Free practice, not one of the roadmap exercises: ${input.title || "(not described)"}`;
+    const selfCheck = exercise
+      ? `Their self-check:
+${exercise.checks.map((c, i) => `${input.checks[i] ? "[x]" : "[ ]"} ${c}`).join("\n")}`
+      : "No self-check for free practice - judge from the photo and their notes, and pick the roadmap drill that best targets the main issue.";
+
+    return `${about}
 Their level: ${level}
 How hard it felt: ${DIFFICULTY[input.difficulty] || "Okay"}
-Their self-check:
-${checked}
+${selfCheck}
 Problems they noticed: ${problems.length ? problems.join("; ") : "none ticked"}
 Their notes: ${input.notes || "(none)"}
 ${input.hasPhoto ? "The photo of the practice is attached." : "No photo was provided - give feedback from the self-report only and say a photo would help."}

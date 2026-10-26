@@ -43,6 +43,7 @@ window.InkAI = (function () {
   function inputFrom(attempt, profile, hasPhoto) {
     return {
       exerciseId: attempt.exerciseId,
+      title: attempt.title || "",
       level: profile.level,
       difficulty: attempt.difficulty,
       checks: attempt.checks,

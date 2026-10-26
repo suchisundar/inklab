@@ -240,31 +240,7 @@
          <div class="row" style="margin-top:16px"><button class="primary" type="submit">Save to journal</button><button type="button" data-close>Cancel</button></div>
        </form>`,
       (m) => {
-        m.querySelectorAll("#diff button").forEach((b) =>
-          b.addEventListener("click", () => {
-            state.difficulty = Number(b.dataset.d);
-            m.querySelectorAll("#diff button").forEach((x) => x.setAttribute("aria-pressed", x === b));
-          })
-        );
-        m.querySelectorAll("[data-p]").forEach((b) =>
-          b.addEventListener("click", () => {
-            const id = b.dataset.p;
-            state.problems.has(id) ? state.problems.delete(id) : state.problems.add(id);
-            b.setAttribute("aria-pressed", state.problems.has(id));
-          })
-        );
-        m.querySelector("#photo").addEventListener("change", async (e) => {
-          const file = e.target.files[0];
-          if (!file) return;
-          try {
-            state.photo = await S.shrinkImage(file);
-            const img = m.querySelector("#preview");
-            img.src = state.photo;
-            img.classList.remove("hidden");
-          } catch (err) {
-            toast(err.message);
-          }
-        });
+        bindLogControls(m, state);
         m.querySelector("#log-form").addEventListener("submit", async (e) => {
           e.preventDefault();
           const checkedIdx = new Set([...m.querySelectorAll('input[name="check"]:checked')].map((c) => Number(c.value)));
@@ -281,14 +257,7 @@
             instructorNotes: "",
             ai: null,
           };
-          if (state.photo) {
-            try {
-              await S.putPhoto(attempt.id, state.photo);
-            } catch (err) {
-              attempt.hasPhoto = false;
-              toast("Couldn't store the photo on this device; saved the rest.");
-            }
-          }
+          await storePhoto(attempt, state.photo);
           S.update((s) => {
             s.attempts.push(attempt);
             if (s.session && ctx.blockIndex != null && s.session.blocks[ctx.blockIndex]) s.session.blocks[ctx.blockIndex].loggedAttemptId = attempt.id;
@@ -297,6 +266,110 @@
           const st = C.status(S.get().attempts, exId);
           toast(st === "solid" ? "Logged - this one is now solid ✓" : "Logged. Keep going!");
           route();
+        });
+      }
+    );
+  }
+
+  // Difficulty, problem chips and photo preview - shared by both log forms.
+  function bindLogControls(m, state) {
+    m.querySelectorAll("#diff button").forEach((b) =>
+      b.addEventListener("click", () => {
+        state.difficulty = Number(b.dataset.d);
+        m.querySelectorAll("#diff button").forEach((x) => x.setAttribute("aria-pressed", x === b));
+      })
+    );
+    m.querySelectorAll("[data-p]").forEach((b) =>
+      b.addEventListener("click", () => {
+        const id = b.dataset.p;
+        state.problems.has(id) ? state.problems.delete(id) : state.problems.add(id);
+        b.setAttribute("aria-pressed", state.problems.has(id));
+      })
+    );
+    m.querySelector("#photo").addEventListener("change", async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      try {
+        state.photo = await S.shrinkImage(file);
+        const img = m.querySelector("#preview");
+        img.src = state.photo;
+        img.classList.remove("hidden");
+      } catch (err) {
+        toast(err.message);
+      }
+    });
+  }
+
+  async function storePhoto(attempt, photo) {
+    if (!photo) return;
+    try {
+      await S.putPhoto(attempt.id, photo);
+    } catch (err) {
+      attempt.hasPhoto = false;
+      toast("Couldn't store the photo on this device; saved the rest.");
+    }
+  }
+
+  // Practice outside a guided session (your own flash, a design you traced...).
+  // Saved as a journal entry with no roadmap exercise, so it gets the same AI
+  // coach button; its problems still count toward fix-it drills.
+  function openFreeLog() {
+    const state = { difficulty: 2, problems: new Set(), photo: null };
+    openModal(
+      `<div class="modal-head"><h2>Upload a practice photo</h2><button data-close aria-label="Close">✕</button></div>
+       <p class="muted small">For practice that wasn't part of a session here - your own flash, a design you traced, extra lines on a spare sheet.</p>
+       <form id="log-form">
+         <label class="field" for="photo">Photo of your practice</label>
+         <input type="file" id="photo" accept="image/*" capture="environment" />
+         <p class="small muted">Tip: even light, no glare, phone parallel to the skin, fill the frame.</p>
+         <img id="preview" class="photo-preview hidden" alt="Preview of your practice photo" />
+
+         <label class="field" for="title">What did you practice?</label>
+         <input type="text" id="title" maxlength="120" placeholder="e.g. Rose flash outline on fake skin" />
+
+         <label class="field">How did it feel?</label>
+         <div class="seg" id="diff">${[1, 2, 3].map((d) => `<button type="button" data-d="${d}" aria-pressed="${d === 2}">${C.DIFFICULTY[d]}</button>`).join("")}</div>
+
+         <label class="field">Anything go wrong?</label>
+         <div class="row" id="probs">
+           ${TROUBLESHOOT.map((p) => `<button type="button" class="chip" data-p="${p.id}" aria-pressed="false">${esc(p.symptom)}</button>`).join("")}
+         </div>
+
+         <label class="field" for="minutes">Minutes spent</label>
+         <input type="number" id="minutes" min="1" max="240" value="30" />
+
+         <label class="field" for="notes">Notes (what you noticed, settings used, questions)</label>
+         <textarea id="notes" placeholder="e.g. 7RL at 9V, the petals' inner lines blew out"></textarea>
+
+         <div class="row" style="margin-top:16px"><button class="primary" type="submit">Save to journal</button><button type="button" data-close>Cancel</button></div>
+       </form>`,
+      (m) => {
+        bindLogControls(m, state);
+        m.querySelector("#log-form").addEventListener("submit", async (e) => {
+          e.preventDefault();
+          if (!state.photo) {
+            toast("Add a photo of your practice first");
+            return;
+          }
+          const attempt = {
+            id: S.uid(),
+            date: new Date().toISOString(),
+            exerciseId: null,
+            title: m.querySelector("#title").value.trim() || "Free practice",
+            minutes: Number(m.querySelector("#minutes").value) || 30,
+            difficulty: state.difficulty,
+            checks: [],
+            problems: [...state.problems],
+            notes: m.querySelector("#notes").value.trim(),
+            hasPhoto: true,
+            instructorNotes: "",
+            ai: null,
+          };
+          await storePhoto(attempt, state.photo);
+          S.update((s) => s.attempts.push(attempt));
+          modal.close();
+          toast("Saved. Tap \"Get AI coach feedback\" on it for a review.");
+          renderJournal();
         });
       }
     );
@@ -351,7 +424,7 @@
     view.innerHTML = `
       <section class="card">
         <div class="spread"><h1>Practice journal</h1>
-          <div class="row"><button id="export">Export</button><label class="btn" for="import">Import</label><input type="file" id="import" accept="application/json" class="hidden" /></div>
+          <div class="row"><button class="primary" id="free-log">Upload practice photo</button><button id="export">Export</button><label class="btn" for="import">Import</label><input type="file" id="import" accept="application/json" class="hidden" /></div>
         </div>
         <div class="grid" style="margin-top:12px">
           <div class="stat"><b>${pr.sessions}</b><span>practice days</span></div>
@@ -375,16 +448,17 @@
           : ""
       }
       <div id="entries">
-        ${attempts.length ? attempts.map(entryCard).join("") : `<section class="card"><p>No entries yet.</p><a class="btn primary" href="#practice">Start a practice session</a></section>`}
+        ${attempts.length ? attempts.map(entryCard).join("") : `<section class="card"><p>No entries yet.</p><p class="muted small">Log an exercise from a practice session, or upload a photo of anything else you practiced to get AI coach feedback on it.</p><a class="btn primary" href="#practice">Start a practice session</a></section>`}
       </div>`;
 
     attempts.forEach(async (a) => {
       if (!a.hasPhoto) return;
       const url = await S.getPhoto(a.id);
       const el = view.querySelector(`[data-thumb="${a.id}"]`);
-      if (url && el) el.outerHTML = `<img class="thumb" src="${url}" alt="Practice photo for ${esc(C.byId[a.exerciseId]?.title)}" data-thumb="${a.id}" />`;
+      if (url && el) el.outerHTML = `<img class="thumb" src="${url}" alt="Practice photo for ${esc(entryTitle(a))}" data-thumb="${a.id}" />`;
     });
 
+    view.querySelector("#free-log").addEventListener("click", openFreeLog);
     view.querySelector("#export").addEventListener("click", exportData);
     view.querySelector("#import").addEventListener("change", importData);
     view.querySelectorAll("[data-ai]").forEach((b) => b.addEventListener("click", () => askCoach(b.dataset.ai, b)));
@@ -413,18 +487,20 @@
     );
   }
 
+  const entryTitle = (a) => (a.exerciseId ? C.byId[a.exerciseId]?.title : a.title || "Free practice");
+
   function entryCard(a) {
     const ex = C.byId[a.exerciseId];
-    if (!ex) return "";
+    if (!ex && a.exerciseId) return "";
     const ratio = Math.round(C.checkRatio(a) * 100);
     return `
       <section class="card entry">
         <div class="thumb" data-thumb="${a.id}">${a.hasPhoto ? "Loading…" : "No photo"}</div>
         <div>
-          <div class="spread"><h3 style="margin:0">${esc(ex.title)}</h3><span class="muted small">${fmtDate(a.date)} · ${a.minutes} min</span></div>
+          <div class="spread"><h3 style="margin:0">${esc(entryTitle(a))}</h3><span class="muted small">${fmtDate(a.date)} · ${a.minutes} min</span></div>
           <div class="row" style="margin:8px 0">
             <span class="pill ${a.difficulty === 3 ? "warn" : a.difficulty === 1 ? "" : "grey"}">${C.DIFFICULTY[a.difficulty]}</span>
-            <span class="pill grey">Self-check ${ratio}%</span>
+            <span class="pill grey">${ex ? `Self-check ${ratio}%` : "Free practice"}</span>
             ${(a.problems || []).map((p) => `<a class="pill warn" href="#fix.${p}" style="text-decoration:none">${esc(C.problemById[p]?.symptom)}</a>`).join("")}
           </div>
           ${a.notes ? `<p>${esc(a.notes)}</p>` : ""}

@@ -215,7 +215,8 @@ window.InkCoach = (function () {
       };
     });
 
-    const sorted = attempts.slice().sort((a, b) => a.date.localeCompare(b.date));
+    // Free-practice uploads have no self-check, so they stay out of the trend.
+    const sorted = attempts.filter((a) => a.exerciseId).sort((a, b) => a.date.localeCompare(b.date));
     const avg = (arr, f) => (arr.length ? arr.reduce((s, a) => s + f(a), 0) / arr.length : null);
     const recent = sorted.slice(-5);
     const before = sorted.slice(-10, -5);

@@ -24,17 +24,19 @@ const MAX_PHOTO_BASE64 = 3_000_000; // ~2.2 MB image; the app sends ~200 KB
 const client = new Anthropic(); // reads ANTHROPIC_API_KEY
 
 function validate(body) {
-  const ex = INKLAB_DATA.EXERCISES.find((e) => e.id === body.exerciseId);
-  if (!ex) return { error: "Unknown exercise." };
+  // exerciseId is null for free practice (a photo uploaded outside a session).
+  const ex = body.exerciseId == null ? null : INKLAB_DATA.EXERCISES.find((e) => e.id === body.exerciseId);
+  if (body.exerciseId != null && !ex) return { error: "Unknown exercise." };
   const problemIds = new Set(INKLAB_DATA.TROUBLESHOOT.map((p) => p.id));
   const photo = typeof body.photo === "string" && body.photo ? body.photo : null;
   if (photo && (photo.length > MAX_PHOTO_BASE64 || !/^[A-Za-z0-9+/=]+$/.test(photo))) return { error: "That photo is too large or isn't a JPEG." };
   return {
     input: {
-      exerciseId: ex.id,
+      exerciseId: ex ? ex.id : null,
+      title: typeof body.title === "string" ? body.title.slice(0, 120) : "",
       level: INKLAB_DATA.LEVELS.some((l) => l.id === body.level) ? body.level : "starting",
       difficulty: [1, 2, 3].includes(body.difficulty) ? body.difficulty : 2,
-      checks: ex.checks.map((_, i) => Array.isArray(body.checks) && body.checks[i] === true),
+      checks: (ex ? ex.checks : []).map((_, i) => Array.isArray(body.checks) && body.checks[i] === true),
       problems: Array.isArray(body.problems) ? body.problems.filter((p) => problemIds.has(p)).slice(0, 12) : [],
       notes: typeof body.notes === "string" ? body.notes.slice(0, 1500) : "",
       hasPhoto: !!photo,

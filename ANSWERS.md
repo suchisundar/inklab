@@ -13,6 +13,7 @@
 > 1. **Practice tab:** pick your stage, what you want to improve, and how much time you have. You get a timed session (warm-up → main exercise → fix-it drill → log it), with a one-line reason for every block.
 > 2. Do the exercise (paper or fake skin only), then **Log it**: how it felt, the self-check, any problems, and a photo.
 > 3. **Journal:** tap *Get AI feedback* on an entry for what's working, up to 3 issues with cause + fix, and a drill.
+> 3b. Practiced something on your own? **Journal → Upload practice photo**, say what it was, and get the same AI feedback.
 > 4. Stuck? **What went wrong?** lists causes and fixes. *Still stuck* saves a question to **Instructor Qs**, which turns everything into one polite message for your instructor.
 >
 > **Example:** I said "practicing on fake skin, linework, 30 minutes", and I'd logged blowouts on straight pulls three sessions running. InkLab gave me: paper grip warm-up (5) → straight pulls (10, because the last attempts felt hard) → depth test as a fix-it drill for blowouts (10) → log it (5). Since blowouts came up 3 times, it also suggested asking my instructor about it.
@@ -41,7 +42,7 @@ flowchart LR
 | --- | --- | --- |
 | Today's main exercise, drill, time split | Coach (rules in `js/coach.js`) | Repeat if last attempt was Hard or under 50% self-check → finish an exercise you've started → next unsolid exercise at your level, prerequisites first → a recurring problem (2+ in last 10 entries) always gets its drill. Every block shows its reason. |
 | When an exercise counts as "solid" | Coach | 2 of last 3 attempts felt Okay/Easy **and** ≥75% of the self-check ticked |
-| What went wrong in a photo | AI (Claude), advisory only | Max 3 issues, picks the drill from the app's own exercise list (schema-enforced), flags bad photos, must say when it's unsure |
+| What went wrong in a photo (guided entries and free-practice uploads) | AI (Claude), advisory only | Max 3 issues, picks the drill from the app's own exercise list (schema-enforced), flags bad photos, must say when it's unsure |
 | Stage, focus, time | Learner | The three questions. The coach trusts a stated level |
 | Whether a session or entry is good | Learner | Difficulty rating and self-check ticks drive everything above |
 | Anything about safety, hygiene, machine setup, real skin | Instructor | The AI is told to route these to `ask_instructor`, never answer them |
