@@ -39,7 +39,7 @@ const CRITERIA = {
   level: "Nothing above the learner's level",
 };
 
-let pass = 0, total = 0, perfect = 0;
+let pass = 0, total = 0, perfect = 0, heldPerfect = 0;
 const byCrit = Object.fromEntries(Object.keys(CRITERIA).map((k) => [k, [0, 0]]));
 const rows = [];
 
@@ -65,6 +65,7 @@ for (const s of gold.scenarios) {
   }
   pass += sp; total += st;
   if (sp === st) perfect++;
+  if (sp === st && s.heldOut) heldPerfect++;
   rows.push({ s, results, plan: blocks.map((b) => `${b.role}:${b.exerciseId || "-"}(${b.minutes})`).join(" → ") });
 }
 
@@ -76,4 +77,7 @@ for (const { s, results, plan } of rows) {
 }
 console.log("\nBy criterion:");
 for (const [k, [p, t]] of Object.entries(byCrit)) console.log(`  ${CRITERIA[k].padEnd(62)} ${p}/${t}`);
-console.log(`\nScore: ${pass}/${total} checks passed (${Math.round((pass / total) * 100)}%), ${perfect}/${gold.scenarios.length} scenarios fully correct\n`);
+console.log(`\nScore: ${pass}/${total} checks passed (${Math.round((pass / total) * 100)}%), ${perfect}/${gold.scenarios.length} scenarios fully correct`);
+const held = gold.scenarios.filter((s) => s.heldOut).length;
+if (held) console.log(`Held-out (S19+, written before the v2 fixes): ${heldPerfect}/${held} fully correct`);
+console.log("");

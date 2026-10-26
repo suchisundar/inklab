@@ -65,12 +65,14 @@ window.InkCoach = (function () {
     return null;
   }
 
-  // The next exercise to work on: the first one that isn't solid, skipping
-  // any you've already moved past (a later exercise in the list is solid).
+  // The next exercise to work on: finish one you've started before opening a
+  // new one, otherwise the first that isn't solid. Skips any you've already
+  // moved past (a later exercise in the list is solid).
   function nextUp(list, attempts) {
-    return list.find(
+    const open = list.filter(
       (e, i) => status(attempts, e.id) !== "solid" && !list.slice(i + 1).some((later) => status(attempts, later.id) === "solid")
     );
+    return open.find((e) => status(attempts, e.id) === "practicing") || open[0];
   }
 
   function generateSession(profile, attempts) {
@@ -130,8 +132,18 @@ window.InkCoach = (function () {
     }
 
     // Give the main exercise its full time if there's room for something else
-    // afterwards; otherwise it gets everything that's left.
-    const mainMinutes = remaining >= main.minutes + 10 ? main.minutes : remaining;
+    // afterwards; otherwise it gets everything that's left. Exception: a
+    // problem you keep logging (2+ times recently) gets 10 minutes of its drill
+    // even in a short session, as long as the main block keeps at least 10.
+    // Too short to split, so the drill becomes the main exercise.
+    let recurring = topProblems(attempts, 3).find((t) => t.count >= 2 && t.problem.drill !== main.id && t.problem.drill !== warmId);
+    if (recurring && remaining < 20 && eligible(byId[recurring.problem.drill], level)) {
+      main = byId[recurring.problem.drill];
+      mainReason = `You've logged "${recurring.problem.symptom.toLowerCase()}" ${recurring.count}× recently and there's only time for one exercise, so today is its drill.`;
+      recurring = null;
+    }
+    const mainMinutes =
+      remaining >= main.minutes + 10 ? main.minutes : recurring && remaining >= 20 ? remaining - 10 : remaining;
     blocks.push({ exerciseId: main.id, minutes: mainMinutes, role: "Main exercise", reason: mainReason });
     remaining -= mainMinutes;
 

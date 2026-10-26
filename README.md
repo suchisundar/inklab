@@ -9,7 +9,7 @@
 
 ## Try it
 
-Published version: https://claude.ai/artifact/8QxgSrk1d86xUghk5zaAQr (private until you share it). There, the AI coach uses the viewer's Claude account with no API key, and each person's journal is saved privately to their own account.
+Published version: https://claude.ai/artifact/8QxgSrk1d86xUghk5zaAQr (shared as "anyone with the link"; viewers need a Claude account). There, the AI coach uses the viewer's Claude account with no API key, and each person's journal is saved privately to their own account.
 
 ## Deploy to Vercel (shareable class link)
 
@@ -54,8 +54,9 @@ The rules live in `js/coach.js`:
 
 - An exercise is **solid** when 2 of your last 3 attempts felt Okay/Easy **and** you ticked ≥75% of its self-check.
 - If your last attempt in this focus area felt **Hard** or scored under 50% on the self-check, you repeat it.
-- Otherwise you get the next exercise at your level that isn't solid yet. If it builds on something you haven't started, you do that first.
+- Otherwise you finish an exercise you've started before opening a new one, then move to the next exercise at your level that isn't solid yet. If it builds on something you haven't started, you do that first (stencil transfer, for example, comes right before your first design).
 - If there's time left, you get a **fix-it drill** for the problem you've logged most often recently, or else a stretch goal.
+- A problem logged 2+ times recently always gets attention: in a 30-minute session the drill takes 10 minutes from the main block; in a 15-minute session the drill *is* the main exercise.
 
 To change the curriculum, edit `js/data.js`. It's plain data, so your instructor can review it too.
 
@@ -78,6 +79,7 @@ The journal, photos and questions are stored in each person's browser (localStor
 ## Files
 
 ```
+ANSWERS.md        class write-up: the five questions
 index.html        app shell
 css/styles.css    styles (light + dark)
 js/data.js        curriculum, exercises, troubleshooting library

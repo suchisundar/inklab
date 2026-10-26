@@ -2,7 +2,7 @@
 
 ## 1. Practice coach (runs offline)
 
-`node eval/run.mjs` scores `js/coach.js` against `eval/gold.json`: 18 learner scenarios (answers + journal history), each labelled with the main exercise(s) a reasonable instructor would accept today.
+`node eval/run.mjs` scores `js/coach.js` against `eval/gold.json`: 25 learner scenarios (answers + journal history), each labelled with the main exercise(s) a reasonable instructor would accept today. S01–S18 were the original set; S19–S25 (`"heldOut": true`) were written from the rubric *before* the v2 fixes, and the runner reports them separately.
 
 **Outcome:** the learner gets a session that is the right next step for them.
 
@@ -25,18 +25,24 @@ The labels were written by the app's author from this rubric. **Have an instruct
 
 **Results**
 
-| Version | Checks passed | Scenarios fully correct |
-| --- | --- | --- |
-| Baseline (`results-baseline.txt`) | 55/60 (92%) | 13/18 |
-| After the progression fix (`results-after.txt`) | 58/60 (97%) | 16/18 |
+| Version | Scenarios | Checks passed | Fully correct | Held-out fully correct |
+| --- | --- | --- | --- | --- |
+| v1 baseline (`results-baseline.txt`) | 18 | 55/60 (92%) | 13/18 | - |
+| v1 progression fix (`results-after.txt`) | 18 | 58/60 (97%) | 16/18 | - |
+| v1 code on the 25-scenario set (`results-v2-baseline.txt`) | 25 | 77/83 (93%) | 20/25 | 4/7 |
+| v2 (`results-v2.txt`) | 25 | 83/83 (100%) | 25/25 | 7/7 |
 
-The improvement: prerequisites aimed at a lower level than the learner's count as met, and exercises the learner has already moved past (a later one is solid) are skipped.
+v1 improvement: prerequisites aimed at a lower level than the learner's count as met, and exercises the learner has already moved past (a later one is solid) are skipped.
 
-Still failing:
-- **S06:** stencil transfer is tagged with every skill, so a new fake-skin learner who wants curves gets stencil practice first.
-- **S12:** a 30-minute session has no room for a fix-it drill, so repeated blowouts aren't targeted.
+The held-out scenarios found a bigger problem than the two known failures: stencil transfer was tagged with every skill, so it won the main slot in 3 of 7 new cases, once even over straight pulls the learner was halfway through (S24). v2 changes:
 
-Caveat: the fix was made while looking at these same scenarios, so the after score is optimistic. New scenarios written by someone else are the honest test.
+1. **Stencil transfer is a setup step, not a focus skill.** It's scheduled right before the first design (`flash-outline` requires it) or as the drill for smeared stencils. Fixes S06, S19, S21, S24.
+2. **Finish what you started.** An exercise you're "practicing" comes before a brand-new one.
+3. **Recurring problems get time even in short sessions.** A problem logged 2+ times recently gets 10 minutes of its drill in a 30-minute session (fixes S12, S24); in a 15-minute session the drill becomes the main exercise. That second rule was added after change 2 broke S13, which had only passed by accident (the old ordering happened to put the drill first).
+
+Caveats: 100% means this rule set agrees with *my own* labels, not that it's right. The held-out cases were written by the same person who wrote the fix, before the fix but knowing the rules. An instructor reviewing `gold.json` and writing 10 new cases is still the honest test.
+
+**Challenge case (S13: blowouts twice, only 15 minutes).** Two good rules conflict: "finish the exercise you started" says straight pulls, and "target the recurring problem" says the depth test. There's only room for one. v2 picks the drill, on the theory that drilling a pull you keep blowing out reinforces the habit. An instructor could reasonably disagree (one more careful set of pulls at lower depth), which is why both are in the accepted list and why this case should go to an instructor.
 
 ## 2. AI photo feedback (needs an API key and real photos)
 

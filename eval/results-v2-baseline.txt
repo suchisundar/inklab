@@ -1,0 +1,63 @@
+
+Practice coach eval: 25 scenarios
+
+✓ S01 Brand-new beginner, linework, 30 min
+    Warm-up:grip-paper(5) → Main exercise:setup-hygiene(20) → Log it:-(5)
+✓ S02 Brand-new beginner, linework, 15 min
+    Warm-up:grip-paper(3) → Main exercise:setup-hygiene(9) → Log it:-(3)
+✓ S03 Brand-new beginner wants curves
+    Warm-up:curve-paper(5) → Main exercise:setup-hygiene(20) → Log it:-(5)
+✓ S04 Beginner did a clean setup run, now linework
+    Warm-up:grip-paper(5) → Main exercise:setup-hygiene(20) → Log it:-(5)
+✓ S05 New on fake skin, linework
+    Warm-up:grip-paper(5) → Main exercise:depth-test(20) → Log it:-(5)
+✗ S06 New on fake skin, wants curves  [failed: main]
+    Warm-up:curve-paper(5) → Main exercise:stencil-apply(20) → Log it:-(5)
+✓ S07 New on fake skin, wants shading
+    Warm-up:grip-paper(5) → Main exercise:depth-test(20) → Log it:-(5)
+✓ S08 Developing consistency, wants shading, 60 min
+    Warm-up:grip-paper(10) → Main exercise:whip-shading(25) → Stretch goal:solid-pack(20) → Log it:-(5)
+✓ S09 Developing consistency, wants curves, 60 min
+    Warm-up:curve-paper(10) → Main exercise:s-curves(20) → Stretch goal:circles(25) → Log it:-(5)
+✓ S10 Straight pulls felt hard last time (patchy lines)
+    Warm-up:grip-paper(5) → Main exercise:straight-pulls(20) → Log it:-(5)
+✓ S11 Blowouts 3 sessions in a row, 60 min
+    Warm-up:grip-paper(10) → Main exercise:straight-pulls(20) → Fix-it drill:depth-test(25) → Log it:-(5)
+✗ S12 Blowouts 3 sessions in a row, 30 min  [failed: problem]
+    Warm-up:grip-paper(5) → Main exercise:straight-pulls(20) → Log it:-(5)
+✓ S13 Blowouts twice, only 15 min
+    Warm-up:grip-paper(3) → Main exercise:depth-test(9) → Log it:-(3)
+✓ S14 Shaky lines keep coming up, 15 min
+    Warm-up:grip-paper(3) → Main exercise:depth-test(9) → Log it:-(3)
+✓ S15 Straight pulls solid, ready to progress
+    Warm-up:grip-paper(5) → Main exercise:long-lines(20) → Log it:-(5)
+✓ S16 Whip shading streaky twice
+    Warm-up:grip-paper(5) → Main exercise:whip-shading(20) → Log it:-(5)
+✓ S17 Circles solid, consistency, linework next
+    Warm-up:curve-paper(10) → Main exercise:flash-outline(45) → Log it:-(5)
+✓ S18 Hand fatigue keeps coming up
+    Warm-up:grip-paper(5) → Main exercise:depth-test(20) → Log it:-(5)
+✗ S19 Fake skin, straight pulls solid, wants curves  [failed: main]
+    Warm-up:curve-paper(5) → Main exercise:stencil-apply(20) → Log it:-(5)
+✓ S20 Developing consistency, linework, no journal yet
+    Warm-up:grip-paper(5) → Main exercise:straight-pulls(20) → Log it:-(5)
+✗ S21 Depth test solid, one okay whip-shading attempt  [failed: main]
+    Warm-up:grip-paper(5) → Main exercise:stencil-apply(20) → Log it:-(5)
+✓ S22 Lopsided circles twice, felt hard
+    Warm-up:curve-paper(5) → Main exercise:circles(20) → Log it:-(5)
+✓ S23 Solid pack too dark, felt hard
+    Warm-up:grip-paper(5) → Main exercise:solid-pack(20) → Log it:-(5)
+✗ S24 Uneven line width twice, 30 min  [failed: main, problem]
+    Warm-up:grip-paper(5) → Main exercise:stencil-apply(20) → Log it:-(5)
+✓ S25 Beginner did setup, wants shading, 15 min
+    Warm-up:grip-paper(3) → Main exercise:setup-hygiene(9) → Log it:-(3)
+
+By criterion:
+  Main exercise is one the gold label accepts                    21/25
+  Blocks add up to the time available, none shorter than 3 min   25/25
+  A recurring problem gets a block that targets it               6/8
+  Nothing above the learner's level                              25/25
+
+Score: 77/83 checks passed (93%), 20/25 scenarios fully correct
+Held-out (S19+, written before the v2 fixes): 4/7 fully correct
+

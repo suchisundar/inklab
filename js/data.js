@@ -109,8 +109,10 @@ window.INKLAB_DATA = (function () {
       id: "stencil-apply",
       stage: "foundations",
       title: "Stencil transfer practice",
-      skills: ["linework", "curves", "shading"],
-      levels: ["starting", "fakeskin"],
+      // Not a focus skill of its own: the coach schedules it before your first
+      // design, or as the drill when stencils keep smearing.
+      skills: [],
+      levels: ["fakeskin", "consistency"],
       minutes: 15,
       paperOnly: false,
       equipment: ["Thermal or hectograph paper", "Stencil solution", "Practice skin", "Simple line drawing"],
@@ -278,7 +280,7 @@ window.INKLAB_DATA = (function () {
       skills: ["linework", "curves"],
       levels: ["fakeskin", "consistency"],
       minutes: 45,
-      requires: ["circles", "long-lines"],
+      requires: ["circles", "long-lines", "stencil-apply"],
       paperOnly: false,
       equipment: ["Simple design (heart, star, small flower, etc.)", "Stencil supplies", "Round liner(s)", "Practice skin"],
       why: "Putting the pieces together - planning line order matters as much as the lines.",
